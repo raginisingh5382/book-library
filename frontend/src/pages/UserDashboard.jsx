@@ -18,11 +18,11 @@ export default function UserDashboard() {
         };
 
         // Get all books
-        const booksRes = await axios.get(`${process.env.REACT_APP_API_URI}/api/books`);
+        const booksRes = await axios.get(`${import.meta.env.VITE_API_URI}/api/books`);
         setBooks(booksRes.data);
 
         // Get user's borrowed books
-        const borrowedRes = await axios.get(`${process.env.REACT_APP_API_URI}/api/borrow/my`, config);
+        const borrowedRes = await axios.get(`${import.meta.env.VITE_API_URI}/api/borrow/my`, config);
         setBorrowedBooks(borrowedRes.data);
       } catch (error) {
         console.error("Error loading data:", error);
@@ -41,7 +41,6 @@ export default function UserDashboard() {
   // Handle Borrow Book
   const handleBorrow = async (bookId) => {
     try {
-      // Check if already borrowed
       const alreadyBorrowed = borrowedBooks.some(
         (b) => b.book._id === bookId && b.status === "borrowed"
       );
@@ -56,20 +55,18 @@ export default function UserDashboard() {
         },
       };
 
-      // Borrow API call
       const response = await axios.post(
-        `${process.env.REACT_APP_API_URI}/api/borrow/borrow/${bookId}`,
+        `${import.meta.env.VITE_API_URI}/api/borrow/borrow/${bookId}`,
         {},
         config
       );
 
       alert(response.data.message || "Book borrowed successfully!");
 
-      // Refresh book and borrowed data
-      const booksRes = await axios.get(`${process.env.REACT_APP_API_URI}/api/books`);
+      const booksRes = await axios.get(`${import.meta.env.VITE_API_URI}/api/books`);
       setBooks(booksRes.data);
 
-      const borrowedRes = await axios.get(`${process.env.REACT_APP_API_URI}/api/borrow/my`, config);
+      const borrowedRes = await axios.get(`${import.meta.env.VITE_API_URI}/api/borrow/my`, config);
       setBorrowedBooks(borrowedRes.data);
     } catch (error) {
       console.error("Borrow Error:", error);
@@ -92,17 +89,16 @@ export default function UserDashboard() {
       };
 
       const response = await axios.post(
-        `${process.env.REACT_APP_API_URI}/api/borrow/return/${borrowId}`,
+        `${import.meta.env.VITE_API_URI}/api/borrow/return/${borrowId}`,
         {},
         config
       );
       alert(response.data.message || "Book returned successfully!");
 
-      // Refresh lists
-      const booksRes = await axios.get(`${process.env.REACT_APP_API_URI}/api/books`);
+      const booksRes = await axios.get(`${import.meta.env.VITE_API_URI}/api/books`);
       setBooks(booksRes.data);
 
-      const borrowedRes = await axios.get(`${process.env.REACT_APP_API_URI}/api/borrow/my`, config);
+      const borrowedRes = await axios.get(`${import.meta.env.VITE_API_URI}/api/borrow/my`, config);
       setBorrowedBooks(borrowedRes.data);
     } catch (error) {
       console.error("Return Error:", error);
@@ -229,5 +225,6 @@ export default function UserDashboard() {
     </div>
   );
 }
+
 
 

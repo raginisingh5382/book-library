@@ -13,8 +13,11 @@ export default function Register() {
     e.preventDefault();
 
     try {
-      // POST request to backend
-      const { data } = await axios.post(`${process.env.REACT_APP_API_URI}/api/users/register`, {
+      // ✅ Use Vite environment variable
+      const API = import.meta.env.VITE_API_URI;
+
+      // ✅ POST request to backend
+      const { data } = await axios.post(`${API}/api/users/register`, {
         name,
         email,
         password,
@@ -23,18 +26,18 @@ export default function Register() {
 
       alert("Registered successfully!");
 
-      // Store user info in localStorage (optional)
+      // ✅ Store user info in localStorage (optional)
       localStorage.setItem("userInfo", JSON.stringify(data));
 
-      // Navigate based on role
+      // ✅ Navigate based on role
       if (data.role === "admin") {
-        navigate("/admin");
+        navigate("/admin-dashboard");
       } else {
-        navigate("/books");
+        navigate("/user-dashboard");
       }
 
     } catch (error) {
-      console.error(error);
+      console.error("Registration Error:", error);
       alert(error.response?.data?.message || "Registration failed");
     }
   };
@@ -95,3 +98,4 @@ export default function Register() {
     </div>
   );
 }
+

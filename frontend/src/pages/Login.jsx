@@ -16,7 +16,10 @@ export default function Login() {
     setError("");
 
     try {
-     const res = await axios.post(`${process.env.REACT_APP_API_URI}/api/auth/login`, {
+      // ✅ Use Vite environment variable
+      const API = import.meta.env.VITE_API_URI;
+
+      const res = await axios.post(`${API}/api/auth/login`, {
         email,
         password,
       });
@@ -31,10 +34,10 @@ export default function Login() {
         return;
       }
 
-      // Save user and token to localStorage
+      // ✅ Save user and token to localStorage
       saveCurrentUser({ ...user, token });
 
-      // Force page reload to update App.jsx state
+      // ✅ Redirect based on role
       if (user.role === "admin") {
         window.location.href = "/admin-dashboard";
       } else {
@@ -65,7 +68,10 @@ export default function Login() {
         )}
 
         <div className="mb-4">
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+          <label
+            htmlFor="email"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
             Email
           </label>
           <input
@@ -80,7 +86,10 @@ export default function Login() {
         </div>
 
         <div className="mb-6">
-          <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+          <label
+            htmlFor="password"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
             Password
           </label>
           <input

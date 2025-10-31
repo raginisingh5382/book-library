@@ -13,6 +13,9 @@ export default function AdminDashboard() {
     totalCopies: "",
   });
 
+  // ✅ Use Vite environment variable
+  const API = import.meta.env.VITE_API_URI;
+
   // Fetch all books & borrowed records from backend
   useEffect(() => {
     const fetchData = async () => {
@@ -24,8 +27,8 @@ export default function AdminDashboard() {
           },
         };
 
-        const booksRes = await axios.get(`${process.env.REACT_APP_API_URI}/api/books`);
-        const borrowedRes = await axios.get(`${process.env.REACT_APP_API_URI}/api/borrow`, config);
+        const booksRes = await axios.get(`${API}/api/books`);
+        const borrowedRes = await axios.get(`${API}/api/borrow`, config);
 
         setBooks(booksRes.data);
         setBorrowedBooks(borrowedRes.data);
@@ -40,7 +43,7 @@ export default function AdminDashboard() {
       }
     };
     fetchData();
-  }, []);
+  }, [API]);
 
   // Handle input change
   const handleChange = (e) => {
@@ -73,21 +76,21 @@ export default function AdminDashboard() {
 
       if (editingBook) {
         await axios.put(
-          `${process.env.REACT_APP_API_URI}/api/books/${editingBook._id}`,
+          `${API}/api/books/${editingBook._id}`,
           { ...formData, totalCopies: copies },
           config
         );
         alert("Book updated successfully!");
       } else {
         await axios.post(
-          `${process.env.REACT_APP_API_URI}/api/books`,
+          `${API}/api/books`,
           { ...formData, totalCopies: copies },
           config
         );
         alert("Book added successfully!");
       }
 
-      const res = await axios.get(`${process.env.REACT_APP_API_URI}/api/books`);
+      const res = await axios.get(`${API}/api/books`);
       setBooks(res.data);
 
       setFormData({ title: "", author: "", genre: "", totalCopies: "" });
@@ -126,7 +129,7 @@ export default function AdminDashboard() {
         },
       };
 
-      await axios.delete(`${process.env.REACT_APP_API_URI}/api/books/${bookId}`, config);
+      await axios.delete(`${API}/api/books/${bookId}`, config);
       alert("Book deleted successfully!");
       setBooks(books.filter((b) => b._id !== bookId));
     } catch (error) {
