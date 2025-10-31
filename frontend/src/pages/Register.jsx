@@ -14,7 +14,7 @@ export default function Register() {
 
     try {
       // POST request to backend
-      const { data } = await axios.post("http://localhost:5000/api/users/register", {
+      const { data } = await axios.post(`${process.env.REACT_APP_API_URI}/api/users/register`, {
         name,
         email,
         password,

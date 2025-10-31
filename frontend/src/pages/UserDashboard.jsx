@@ -18,11 +18,11 @@ export default function UserDashboard() {
         };
 
         // Get all books
-        const booksRes = await axios.get("http://localhost:5000/api/books");
+        const booksRes = await axios.get(`${process.env.REACT_APP_API_URI}/api/books`);
         setBooks(booksRes.data);
 
         // Get user's borrowed books
-        const borrowedRes = await axios.get("http://localhost:5000/api/borrow/my", config);
+        const borrowedRes = await axios.get(`${process.env.REACT_APP_API_URI}/api/borrow/my`, config);
         setBorrowedBooks(borrowedRes.data);
       } catch (error) {
         console.error("Error loading data:", error);
@@ -58,7 +58,7 @@ export default function UserDashboard() {
 
       // Borrow API call
       const response = await axios.post(
-        `http://localhost:5000/api/borrow/borrow/${bookId}`,
+        `${process.env.REACT_APP_API_URI}/api/borrow/borrow/${bookId}`,
         {},
         config
       );
@@ -66,10 +66,10 @@ export default function UserDashboard() {
       alert(response.data.message || "Book borrowed successfully!");
 
       // Refresh book and borrowed data
-      const booksRes = await axios.get("http://localhost:5000/api/books");
+      const booksRes = await axios.get(`${process.env.REACT_APP_API_URI}/api/books`);
       setBooks(booksRes.data);
 
-      const borrowedRes = await axios.get("http://localhost:5000/api/borrow/my", config);
+      const borrowedRes = await axios.get(`${process.env.REACT_APP_API_URI}/api/borrow/my`, config);
       setBorrowedBooks(borrowedRes.data);
     } catch (error) {
       console.error("Borrow Error:", error);
@@ -92,17 +92,17 @@ export default function UserDashboard() {
       };
 
       const response = await axios.post(
-        `http://localhost:5000/api/borrow/return/${borrowId}`,
+        `${process.env.REACT_APP_API_URI}/api/borrow/return/${borrowId}`,
         {},
         config
       );
       alert(response.data.message || "Book returned successfully!");
 
       // Refresh lists
-      const booksRes = await axios.get("http://localhost:5000/api/books");
+      const booksRes = await axios.get(`${process.env.REACT_APP_API_URI}/api/books`);
       setBooks(booksRes.data);
 
-      const borrowedRes = await axios.get("http://localhost:5000/api/borrow/my", config);
+      const borrowedRes = await axios.get(`${process.env.REACT_APP_API_URI}/api/borrow/my`, config);
       setBorrowedBooks(borrowedRes.data);
     } catch (error) {
       console.error("Return Error:", error);
@@ -162,7 +162,11 @@ export default function UserDashboard() {
                               : "bg-green-600 hover:bg-green-700"
                           }`}
                         >
-                          {isBorrowed ? "Already Borrowed" : book.totalCopies === 0 ? "Not Available" : "Borrow"}
+                          {isBorrowed
+                            ? "Already Borrowed"
+                            : book.totalCopies === 0
+                            ? "Not Available"
+                            : "Borrow"}
                         </button>
                       </td>
                     </tr>
@@ -180,7 +184,7 @@ export default function UserDashboard() {
           📘 My Borrowed Books
         </h2>
 
-        {borrowedBooks.filter(b => b.status === "borrowed").length === 0 ? (
+        {borrowedBooks.filter((b) => b.status === "borrowed").length === 0 ? (
           <p className="text-gray-500 text-center">
             You haven't borrowed any books yet.
           </p>
@@ -198,7 +202,7 @@ export default function UserDashboard() {
               </thead>
               <tbody>
                 {borrowedBooks
-                  .filter(b => b.status === "borrowed")
+                  .filter((b) => b.status === "borrowed")
                   .map((borrow) => (
                     <tr key={borrow._id} className="hover:bg-gray-50">
                       <td className="border p-2">{borrow.book?.title || "N/A"}</td>
@@ -225,4 +229,5 @@ export default function UserDashboard() {
     </div>
   );
 }
+
 

@@ -24,9 +24,9 @@ export default function AdminDashboard() {
           },
         };
 
-        const booksRes = await axios.get("http://localhost:5000/api/books");
-        const borrowedRes = await axios.get("http://localhost:5000/api/borrow", config);
-        
+        const booksRes = await axios.get(`${process.env.REACT_APP_API_URI}/api/books`);
+        const borrowedRes = await axios.get(`${process.env.REACT_APP_API_URI}/api/borrow`, config);
+
         setBooks(booksRes.data);
         setBorrowedBooks(borrowedRes.data);
       } catch (error) {
@@ -73,21 +73,21 @@ export default function AdminDashboard() {
 
       if (editingBook) {
         await axios.put(
-          `http://localhost:5000/api/books/${editingBook._id}`,
+          `${process.env.REACT_APP_API_URI}/api/books/${editingBook._id}`,
           { ...formData, totalCopies: copies },
           config
         );
         alert("Book updated successfully!");
       } else {
         await axios.post(
-          "http://localhost:5000/api/books",
+          `${process.env.REACT_APP_API_URI}/api/books`,
           { ...formData, totalCopies: copies },
           config
         );
         alert("Book added successfully!");
       }
 
-      const res = await axios.get("http://localhost:5000/api/books");
+      const res = await axios.get(`${process.env.REACT_APP_API_URI}/api/books`);
       setBooks(res.data);
 
       setFormData({ title: "", author: "", genre: "", totalCopies: "" });
@@ -114,7 +114,7 @@ export default function AdminDashboard() {
     });
   };
 
-  //  Delete Book
+  // Delete Book
   const handleDelete = async (bookId) => {
     if (!window.confirm("Are you sure you want to delete this book?")) return;
 
@@ -126,7 +126,7 @@ export default function AdminDashboard() {
         },
       };
 
-      await axios.delete(`http://localhost:5000/api/books/${bookId}`, config);
+      await axios.delete(`${process.env.REACT_APP_API_URI}/api/books/${bookId}`, config);
       alert("Book deleted successfully!");
       setBooks(books.filter((b) => b._id !== bookId));
     } catch (error) {
@@ -140,7 +140,7 @@ export default function AdminDashboard() {
     }
   };
 
-  //  Borrowed / Available count helpers
+  // Borrowed / Available count helpers
   const getBorrowedCount = (bookId) =>
     borrowedBooks.filter((b) => b.book._id === bookId && b.status === "borrowed").length;
 

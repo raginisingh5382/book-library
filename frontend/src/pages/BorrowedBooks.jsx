@@ -1,252 +1,267 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
 import { getCurrentUser } from "../utils/auth";
 
-export default function BorrowedBooks() {
+export default function AdminDashboard() {
+  const [books, setBooks] = useState([]);
   const [borrowedBooks, setBorrowedBooks] = useState([]);
-  const [filter, setFilter] = useState("all"); // all, borrowed, returned
-  const [loading, setLoading] = useState(true);
-  const user = getCurrentUser();
+  const [editingBook, setEditingBook] = useState(null);
+  const [formData, setFormData] = useState({
+    title: "",
+    author: "",
+    genre: "",
+    totalCopies: "",
+  });
 
+  // Fetch all books & borrowed records from backend
   useEffect(() => {
-    const fetchBorrowedBooks = async () => {
+    const fetchData = async () => {
       try {
+        const user = getCurrentUser();
         const config = {
           headers: {
             Authorization: `Bearer ${user?.token}`,
           },
         };
 
-        const response = await axios.get("http://localhost:5000/api/borrow/my", config);
-        setBorrowedBooks(response.data);
+        const booksRes = await axios.get(`${process.env.REACT_APP_API_URI}/api/books`);
+        const borrowedRes = await axios.get(`${process.env.REACT_APP_API_URI}/api/borrow`, config);
+
+        setBooks(booksRes.data);
+        setBorrowedBooks(borrowedRes.data);
       } catch (error) {
-        console.error("Error fetching borrowed books:", error);
+        console.error("Error loading data:", error);
         if (error.response?.status === 401) {
           alert("Session expired! Please login again.");
           window.location.href = "/login";
+        } else {
+          alert("Failed to load data from server!");
         }
-      } finally {
-        setLoading(false);
       }
     };
-
-    fetchBorrowedBooks();
+    fetchData();
   }, []);
 
-  const filteredBooks = borrowedBooks.filter((borrow) => {
-    if (filter === "borrowed") return borrow.status === "borrowed";
-    if (filter === "returned") return borrow.status === "returned";
-    return true; // all
-  });
+  // Handle input change
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+  };
 
-  const formatDate = (date) => {
-    return new Date(date).toLocaleDateString("en-IN", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
+  // Add or Update Book
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!formData.title || !formData.author || !formData.genre || !formData.totalCopies) {
+      alert("Please fill in all fields!");
+      return;
+    }
+
+    const copies = parseInt(formData.totalCopies);
+    if (isNaN(copies) || copies < 1) {
+      alert("Total copies must be a positive number!");
+      return;
+    }
+
+    try {
+      const user = getCurrentUser();
+      const config = {
+        headers: {
+          Authorization: `Bearer ${user?.token}`,
+        },
+      };
+
+      if (editingBook) {
+        await axios.put(
+          `${process.env.REACT_APP_API_URI}/api/books/${editingBook._id}`,
+          { ...formData, totalCopies: copies },
+          config
+        );
+        alert("Book updated successfully!");
+      } else {
+        await axios.post(
+          `${process.env.REACT_APP_API_URI}/api/books`,
+          { ...formData, totalCopies: copies },
+          config
+        );
+        alert("Book added successfully!");
+      }
+
+      const res = await axios.get(`${process.env.REACT_APP_API_URI}/api/books`);
+      setBooks(res.data);
+
+      setFormData({ title: "", author: "", genre: "", totalCopies: "" });
+      setEditingBook(null);
+    } catch (error) {
+      console.error("Error saving book:", error);
+      if (error.response?.status === 401) {
+        alert("Session expired! Please login again.");
+        window.location.href = "/login";
+      } else {
+        alert(error.response?.data?.message || "Failed to save book!");
+      }
+    }
+  };
+
+  // Edit Book
+  const handleEdit = (book) => {
+    setEditingBook(book);
+    setFormData({
+      title: book.title,
+      author: book.author,
+      genre: book.genre,
+      totalCopies: book.totalCopies,
     });
   };
 
-  const calculateDaysHeld = (borrowDate, returnDate) => {
-    const start = new Date(borrowDate);
-    const end = returnDate ? new Date(returnDate) : new Date();
-    const diffTime = Math.abs(end - start);
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays;
+  // Delete Book
+  const handleDelete = async (bookId) => {
+    if (!window.confirm("Are you sure you want to delete this book?")) return;
+
+    try {
+      const user = getCurrentUser();
+      const config = {
+        headers: {
+          Authorization: `Bearer ${user?.token}`,
+        },
+      };
+
+      await axios.delete(`${process.env.REACT_APP_API_URI}/api/books/${bookId}`, config);
+      alert("Book deleted successfully!");
+      setBooks(books.filter((b) => b._id !== bookId));
+    } catch (error) {
+      console.error("Error deleting book:", error);
+      if (error.response?.status === 401) {
+        alert("Session expired! Please login again.");
+        window.location.href = "/login";
+      } else {
+        alert("Failed to delete book!");
+      }
+    }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <p className="text-gray-600">Loading your borrow history...</p>
-      </div>
-    );
-  }
+  // Borrowed / Available count helpers
+  const getBorrowedCount = (bookId) =>
+    borrowedBooks.filter((b) => b.book._id === bookId && b.status === "borrowed").length;
+
+  const getAvailableCopies = (book) =>
+    Math.max(0, book.totalCopies - getBorrowedCount(book._id));
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">
-          📚 My Borrow History
-        </h1>
-        <p className="text-gray-600 mb-6">
-          View all your borrowed books with dates and status
-        </p>
+      <h1 className="text-3xl font-bold text-center mb-6 text-gray-800">
+        📚 Admin Dashboard
+      </h1>
 
-        {/* Filter Tabs */}
-        <div className="bg-white rounded-lg shadow-md p-4 mb-6">
-          <div className="flex gap-2">
-            <button
-              onClick={() => setFilter("all")}
-              className={`px-4 py-2 rounded-lg font-medium transition ${
-                filter === "all"
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
-            >
-              All ({borrowedBooks.length})
-            </button>
-            <button
-              onClick={() => setFilter("borrowed")}
-              className={`px-4 py-2 rounded-lg font-medium transition ${
-                filter === "borrowed"
-                  ? "bg-green-600 text-white"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
-            >
-              Currently Borrowed ({borrowedBooks.filter(b => b.status === "borrowed").length})
-            </button>
-            <button
-              onClick={() => setFilter("returned")}
-              className={`px-4 py-2 rounded-lg font-medium transition ${
-                filter === "returned"
-                  ? "bg-gray-600 text-white"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
-            >
-              Returned ({borrowedBooks.filter(b => b.status === "returned").length})
-            </button>
-          </div>
-        </div>
+      {/* Add / Edit Book Form */}
+      <div className="max-w-xl mx-auto bg-white p-6 rounded-lg shadow-lg mb-8">
+        <h2 className="text-xl font-semibold mb-4 text-gray-700">
+          {editingBook ? "✏ Edit Book" : "➕ Add New Book"}
+        </h2>
 
-        {/* Books List */}
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          {filteredBooks.length === 0 ? (
-            <div className="p-8 text-center text-gray-500">
-              <svg
-                className="w-16 h-16 mx-auto mb-4 text-gray-300"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-                />
-              </svg>
-              <p className="text-lg font-medium">No books found</p>
-              <p className="text-sm">
-                {filter === "all"
-                  ? "You haven't borrowed any books yet."
-                  : filter === "borrowed"
-                  ? "You don't have any books currently borrowed."
-                  : "You haven't returned any books yet."}
-              </p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-100 border-b">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                      Book Details
-                    </th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                      Borrow Date
-                    </th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                      Return Date
-                    </th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                      Days Held
-                    </th>
-                    <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">
-                      Status
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {filteredBooks.map((borrow) => (
-                    <tr key={borrow._id} className="hover:bg-gray-50 transition">
-                      <td className="px-4 py-4">
-                        <div>
-                          <p className="font-semibold text-gray-800">
-                            {borrow.book?.title || "Unknown Book"}
-                          </p>
-                          <p className="text-sm text-gray-600">
-                            by {borrow.book?.author || "Unknown Author"}
-                          </p>
-                          <p className="text-xs text-gray-500 mt-1">
-                            {borrow.book?.genre || ""}
-                          </p>
-                        </div>
-                      </td>
-                      <td className="px-4 py-4">
-                        <p className="text-sm text-gray-700">
-                          {formatDate(borrow.borrowDate)}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {new Date(borrow.borrowDate).toLocaleTimeString("en-IN", {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </p>
-                      </td>
-                      <td className="px-4 py-4">
-                        {borrow.returnDate ? (
-                          <>
-                            <p className="text-sm text-gray-700">
-                              {formatDate(borrow.returnDate)}
-                            </p>
-                            <p className="text-xs text-gray-500">
-                              {new Date(borrow.returnDate).toLocaleTimeString("en-IN", {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })}
-                            </p>
-                          </>
-                        ) : (
-                          <p className="text-sm text-gray-500 italic">Not returned yet</p>
-                        )}
-                      </td>
-                      <td className="px-4 py-4">
-                        <p className="text-sm font-medium text-gray-700">
-                          {calculateDaysHeld(borrow.borrowDate, borrow.returnDate)} days
-                        </p>
-                      </td>
-                      <td className="px-4 py-4 text-center">
-                        <span
-                          className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
-                            borrow.status === "borrowed"
-                              ? "bg-green-100 text-green-800"
-                              : "bg-gray-100 text-gray-800"
-                          }`}
+        <form onSubmit={handleSubmit}>
+          <input
+            type="text"
+            name="title"
+            placeholder="Book Title"
+            value={formData.title}
+            onChange={handleChange}
+            className="w-full border p-2 mb-3 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
+            required
+          />
+          <input
+            type="text"
+            name="author"
+            placeholder="Author"
+            value={formData.author}
+            onChange={handleChange}
+            className="w-full border p-2 mb-3 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
+            required
+          />
+          <input
+            type="text"
+            name="genre"
+            placeholder="Genre"
+            value={formData.genre}
+            onChange={handleChange}
+            className="w-full border p-2 mb-3 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
+            required
+          />
+          <input
+            type="number"
+            name="totalCopies"
+            placeholder="Total Copies"
+            value={formData.totalCopies}
+            onChange={handleChange}
+            min="1"
+            className="w-full border p-2 mb-3 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
+            required
+          />
+
+          <button
+            type="submit"
+            className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition"
+          >
+            {editingBook ? "Update Book" : "Add Book"}
+          </button>
+        </form>
+      </div>
+
+      {/* Books Table */}
+      <div className="max-w-5xl mx-auto bg-white rounded-lg shadow-lg p-6">
+        <h2 className="text-xl font-semibold mb-4 text-gray-700">📖 Book List</h2>
+
+        {books.length === 0 ? (
+          <p className="text-gray-500 text-center">No books available.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse border border-gray-300">
+              <thead>
+                <tr className="bg-gray-200 text-left">
+                  <th className="border p-2">Title</th>
+                  <th className="border p-2">Author</th>
+                  <th className="border p-2">Genre</th>
+                  <th className="border p-2 text-center">Total Copies</th>
+                  <th className="border p-2 text-center">Borrowed</th>
+                  <th className="border p-2 text-center">Available</th>
+                  <th className="border p-2 text-center">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {books.map((book) => {
+                  const borrowed = getBorrowedCount(book._id);
+                  const available = getAvailableCopies(book);
+                  return (
+                    <tr key={book._id} className="hover:bg-gray-50">
+                      <td className="border p-2">{book.title}</td>
+                      <td className="border p-2">{book.author}</td>
+                      <td className="border p-2">{book.genre}</td>
+                      <td className="border p-2 text-center">{book.totalCopies}</td>
+                      <td className="border p-2 text-center">{borrowed}</td>
+                      <td className="border p-2 text-center">{available}</td>
+                      <td className="border p-2 text-center space-x-2">
+                        <button
+                          onClick={() => handleEdit(book)}
+                          className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600"
                         >
-                          {borrow.status === "borrowed" ? "📖 Borrowed" : "✓ Returned"}
-                        </span>
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDelete(book._id)}
+                          className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
+                        >
+                          Delete
+                        </button>
                       </td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-
-        {/* Summary Stats */}
-        {borrowedBooks.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-            <div className="bg-white rounded-lg shadow p-4">
-              <p className="text-sm text-gray-600 mb-1">Total Books Borrowed</p>
-              <p className="text-2xl font-bold text-blue-600">{borrowedBooks.length}</p>
-            </div>
-            <div className="bg-white rounded-lg shadow p-4">
-              <p className="text-sm text-gray-600 mb-1">Currently Reading</p>
-              <p className="text-2xl font-bold text-green-600">
-                {borrowedBooks.filter(b => b.status === "borrowed").length}
-              </p>
-            </div>
-            <div className="bg-white rounded-lg shadow p-4">
-              <p className="text-sm text-gray-600 mb-1">Books Returned</p>
-              <p className="text-2xl font-bold text-gray-600">
-                {borrowedBooks.filter(b => b.status === "returned").length}
-              </p>
-            </div>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         )}
       </div>
     </div>
   );
 }
+
