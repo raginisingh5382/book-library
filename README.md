@@ -59,24 +59,39 @@ Relationships:
 - One User can borrow many Books
 - One Book can have many Borrow records
 ```
-API Endpoints — Book Library Project
------------Auth Routes------------
-Method	Endpoint	Description
-POST	/api/auth/register	Register a new user
-POST	/api/auth/login	Login existing user and generate JWT token
+## 📚 API Endpoints — Book Library Project
 
---------Books Routes-------------
-Method	Endpoint	Description
-GET	/api/books	Fetch all available books
-POST	/api/books	Add a new book (Admin only)
-PUT	/api/books/:id	Update book details (Admin only)
-DELETE	/api/books/:id	Delete a book (Admin only)
----------Borrow / Return Routes---------------
-Method	Endpoint	Description
-POST	/api/borrow	Borrow a book by ID
-POST	/api/borrow/return	Return a borrowed book
-GET	/api/borrow	View all borrow records (Admin only)
-GET	/api/borrow/myBorrowed	View all books borrowed by logged-in user
+---
+
+### 🔐 Auth Routes
+
+| **Method** | **Endpoint** | **Description** |
+|:--:|:--|:--|
+| `POST` | `/api/auth/register` | Register a new user |
+| `POST` | `/api/auth/login` | Login existing user and generate JWT token |
+
+---
+
+### 📘 Books Routes
+
+| **Method** | **Endpoint** | **Description** |
+|:--:|:--|:--|
+| `GET` | `/api/books` | Fetch all available books |
+| `POST` | `/api/books` | Add a new book (Admin only) |
+| `PUT` | `/api/books/:id` | Update book details (Admin only) |
+| `DELETE` | `/api/books/:id` | Delete a book (Admin only) |
+
+---
+
+### 📗 Borrow / Return Routes
+
+| **Method** | **Endpoint** | **Description** |
+|:--:|:--|:--|
+| `POST` | `/api/borrow` | Borrow a book by ID |
+| `POST` | `/api/borrow/return` | Return a borrowed book |
+| `GET` | `/api/borrow` | View all borrow records (Admin only) |
+| `GET` | `/api/borrow/myBorrowed` | View all books borrowed by logged-in user |
+
 ---
 
 
@@ -85,3 +100,9 @@ GET	/api/borrow/myBorrowed	View all books borrowed by logged-in user
 
 Frontend: https://book-library-six-steel.vercel.app/login  
 Backend API: https://book-library-qccd.onrender.com
+
+##  Demo Video
+
+**Watch Demo Video**:-https://drive.google.com/file/d/1wYGkrtKDqdfK-AmM3OIZW7arur623-d6/view?usp=drive_link
+
+> 📌 *Click the link above to view the demo hosted on Google Drive.*
